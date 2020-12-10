@@ -88,7 +88,7 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
 
         $i = 0;
         foreach ($plugins as $plugin =>  $v) {
-            if($plugins != 'DataGuard') {
+            if($plugin != 'DataGuard') {
                 $name = "plugin:{$plugin}";
                 $backupName = "{$name}:b";
                 $backupTime = self::loadBackupTime($backupName);
