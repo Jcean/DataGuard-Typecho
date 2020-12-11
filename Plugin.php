@@ -297,7 +297,7 @@ JAVASCRIPT;
             ];
         } else
             return [
-                'msg' => "暂无数据, 不需要进行备份!",
+                'msg' => "未找到 {$$name} 配置数据!",
                 'status' => 'error'
             ];
     }
