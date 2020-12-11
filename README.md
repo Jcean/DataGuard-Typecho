@@ -1,9 +1,9 @@
 # DataGuard-Typecho
-数据卫士 DataGuard For Typecho
+数据卫士 DataGuard For Typecho v1.0.1
 
 ## 介绍
   1. 用于Typecho主题、插件的数据备份
-  2. 手动备份、恢复数据
+  2. 手动备份、恢复、删除数据
   3. 周期性自动保存当前主题、已启用插件的数据
 
 ## 声明

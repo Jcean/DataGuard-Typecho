@@ -5,7 +5,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  *
  * @package DataGuard
  * @author Jesus0s
- * @version 1.0.0
+ * @version 1.0.1
  * @link https://www.jesus0s.com
  */
 class DataGuard_Plugin implements Typecho_Plugin_Interface
@@ -39,97 +39,76 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
      */
     public static function config(Typecho_Widget_Helper_Form $form) {
         if (isset($_GET['action']) && $_GET['action'] == 'backup') {
-            $name = "{$_GET['type']}:{$_GET['name']}";
-            $message = self::backup($name);
+            $message = self::backup($_GET['type'], $_GET['name']);
             Typecho_Widget::widget('Widget_Notice')->set(_t($message['msg']), $message['status']);
             Typecho_Response::getInstance()->goBack();
         }
         if (isset($_GET['action']) && $_GET['action'] == 'restore') {
-            $name = "{$_GET['type']}:{$_GET['name']}";
-            self::restore($name);
+            self::restore($_GET['type'], $_GET['name']);
             $message = "恢复成功!";
             Typecho_Widget::widget('Widget_Notice')->set(_t($message), 'success');
             Typecho_Response::getInstance()->goBack();
         }
         if (isset($_GET['action']) && $_GET['action'] == 'delete') {
-            $name = "{$_GET['type']}:{$_GET['name']}";
-            self::delete($name);
+            self::delete($_GET['type'], $_GET['name']);
             $message = "删除成功!";
             Typecho_Widget::widget('Widget_Notice')->set(_t($message), 'success');
             Typecho_Response::getInstance()->goBack();
         }
 
-
         $actionUrl = Typecho_Common::url('/options-plugin.php?config=DataGuard&action=%s&type=%s&name=%s', Helper::options()->adminUrl);
 
-        $form->addInput(new Title_Plugin('themeTitle', null, null, _t('主题备份'), null));
+        $backups = [
+            'theme' => [],
+            'plugin' => []
+        ];
 
         Typecho_Widget::widget('Widget_Themes_List')->to($themes);
-        $i = 0;
-        while($themes->next()) {
-            if($themes->activated) {
-                $name = "theme:{$themes->name}";
-                $backupName = "{$name}:b";
-                $backupTime = self::loadBackupTime($backupName);
-                $themeTitle = new SubTitle_Plugin('SubTitle', null, null, _t((++$i) . ". {$themes->title}"), _t('上次备份时间'));
+        while($themes->next())
+            if($themes->activated)
+                array_push($backups['theme'], $themes->name);
+        $plugins = Typecho_Plugin::export()['activated'];
+        foreach ($plugins as $plugin => $v)
+            if($plugin != 'DataGuard')
+                array_push($backups['plugin'], $plugin);
+
+        foreach ($backups as $type => $v) {
+            $backupTitle[$type] = new Title_Plugin('backupTitle', null, null, _t($type)._t("备份"), null);
+            $form->addInput($backupTitle[$type]);
+            if(sizeof($v) <= 0) {
+                $backupTitle[$type]->description(_t("暂无需备份") . _t($type));
+            }
+
+            for ($i = 0; $i < sizeof($v); $i++) {
+                $name = $v[$i];
+                if($name === 'DataGuard') continue;
+                $backupTime = self::loadBackupTime($type, $name);
+                $themeTitle = new SubTitle_Plugin('SubTitle', null, null, _t(($i+1) . ". {$name}"), _t('上次备份时间'));
                 $themeTitle->description(_t($backupTime));
                 $form->addInput($themeTitle);
-                $backupBtn = new Typecho_Widget_Helper_Form_Element_Submit();
-                $backupBtn->value(_t('立即备份'));
-                $backupBtn->input->setAttribute('class', 'btn btn-s primary btn-operate');
-                $backupBtn->input->setAttribute('onclick', 'javascript:return btnClick(this)');
-                $backupBtn->input->setAttribute('formaction', sprintf($actionUrl, 'backup', 'theme', $themes->name));
-                $form->addItem($backupBtn);
-                $restoreBtn = new Typecho_Widget_Helper_Form_Element_Submit();
-                $restoreBtn->value(_t('恢复备份'));
-                $restoreBtn->input->setAttribute('class', 'btn btn-s btn-warn btn-operate');
-                $restoreBtn->input->setAttribute('onclick', 'javascript:return btnClick(this)');
-                $restoreBtn->input->setAttribute('formaction', sprintf($actionUrl, 'restore', 'theme', $themes->name));
-                $form->addItem($restoreBtn);
-                $deleteBtn = new Typecho_Widget_Helper_Form_Element_Submit();
-                $deleteBtn->value(_t('删除备份'));
-                $deleteBtn->input->setAttribute('class', 'btn btn-s btn-warn btn-operate');
-                $deleteBtn->input->setAttribute('onclick', 'javascript:return btnClick(this)');
-                $deleteBtn->input->setAttribute('formaction', sprintf($actionUrl, 'delete', 'theme', $themes->name));
-                $form->addItem($deleteBtn);
-            }
-        }
-
-        $pluginsTitle = new Title_Plugin('pluginTitle', null, null, _t('插件备份'), null);
-        $form->addInput($pluginsTitle);
-
-        $plugins = Typecho_Plugin::export()['activated'];
-        if(sizeof($plugins) <= 1) {
-            $pluginsTitle->description(_t("暂无需备份插件"));
-        }
-
-        $i = 0;
-        foreach ($plugins as $plugin =>  $v) {
-            if($plugin != 'DataGuard') {
-                $name = "plugin:{$plugin}";
-                $backupName = "{$name}:b";
-                $backupTime = self::loadBackupTime($backupName);
-                $pluginTitle = new SubTitle_Plugin('SubTitle',null, null, _t((++$i) . ". {$plugin}"), _t('上次备份时间'));
-                $pluginTitle->description(_t($backupTime));
-                $form->addInput($pluginTitle);
-                $backupBtn = new Typecho_Widget_Helper_Form_Element_Submit();
-                $backupBtn->value(_t('立即备份'));
-                $backupBtn->input->setAttribute('class','btn btn-s primary btn-operate');
-                $backupBtn->input->setAttribute('onclick','javascript:return btnClick(this)');
-                $backupBtn->input->setAttribute('formaction', sprintf($actionUrl, 'backup', 'plugin', $plugin));
-                $form->addItem($backupBtn);
-                $restoreBtn = new Typecho_Widget_Helper_Form_Element_Submit();
-                $restoreBtn->value(_t('恢复备份'));
-                $restoreBtn->input->setAttribute('class','btn btn-s btn-warn btn-operate');
-                $restoreBtn->input->setAttribute('onclick','javascript:return btnClick(this)');
-                $restoreBtn->input->setAttribute('formaction', sprintf($actionUrl, 'restore', 'plugin', $plugin));
-                $form->addItem($restoreBtn);
-                $deleteBtn = new Typecho_Widget_Helper_Form_Element_Submit();
-                $deleteBtn->value(_t('删除备份'));
-                $deleteBtn->input->setAttribute('class','btn btn-s btn-warn btn-operate');
-                $deleteBtn->input->setAttribute('onclick','javascript:return btnClick(this)');
-                $deleteBtn->input->setAttribute('formaction', sprintf($actionUrl, 'delete', 'plugin', $plugin));
-                $form->addItem($deleteBtn);
+                $btnArr = [
+                    'backup' => [
+                        'color' => '#5cb85c',
+                        'text' => '立即备份'
+                    ],
+                    'restore' => [
+                        'color' => '#f0ad4e',
+                        'text' => '恢复备份'
+                    ],
+                    'delete' => [
+                        'color' => '#d9534f',
+                        'text' => '删除备份'
+                    ]
+                ];
+                foreach ($btnArr as $operateType => $attr) {
+                    $operateBtn = new Typecho_Widget_Helper_Form_Element_Submit();
+                    $operateBtn->value(_t($attr['text']));
+                    $operateBtn->input->setAttribute('style', "background: {$attr['color']};");
+                    $operateBtn->input->setAttribute('class', 'btn btn-s btn-operate');
+                    $operateBtn->input->setAttribute('onclick', 'javascript:return btnClick(this)');
+                    $operateBtn->input->setAttribute('formaction', sprintf($actionUrl, $operateType, $type, $name));
+                    $form->addItem($operateBtn);
+                }
             }
         }
 
@@ -138,6 +117,23 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
         $cycle->input->setAttribute('class', 'mini');
         $cycle->addRule('isInteger', _t('更新周期必须是纯数字'));
         $form->addInput($cycle);
+
+        echo <<<HTML
+            <style>
+            .btn-s {
+            float: left;
+                width: 170px;
+                height: 40px;
+                line-height: 40px;
+                margin: 0 1em 0 0 !important;
+                border: none;
+                color: #fff;
+                font-size: 14px;
+                border-radius: 20px;
+                transition: all 0.35s;
+            }
+            </style>
+HTML;
 
         echo <<<JAVASCRIPT
             <script type="text/javascript">
@@ -187,13 +183,13 @@ JAVASCRIPT;
             Typecho_Widget::widget('Widget_Themes_List')->to($themes);
             while($themes->next()) {
                 if($themes->activated) {
-                    self::backup("theme:{$themes->name}");
+                    self::backup('theme', $themes->name);
                 }
             }
             $plugins = Typecho_Plugin::export()['activated'];
             foreach ($plugins as $plugin =>  $v) {
                 if ($plugin != 'DataGuard') {
-                    self::backup("plugin:{$plugin}");
+                    self::backup('plugin', $plugin);
                 }
             }
             if($hasBackupTime) {
@@ -212,7 +208,9 @@ JAVASCRIPT;
         }
     }
 
-    private static function loadBackupTime($backupName) {
+    private static function loadBackupTime($type, $name) {
+        $name = "{$type}:{$name}";
+        $backupName = "{$name}:b";
         $backupTimeName = "{$backupName}:t";
         $db = Typecho_Db::get();
         $widget = Typecho_Widget::widget('Widget_Abstract_Options');
@@ -239,7 +237,8 @@ JAVASCRIPT;
         return "<span style=\"font-weight: bold;color: ${color}\">" . _t("上次备份时间") . ": {$backupTime}</span>";
     }
 
-    private static function backup($name) {
+    private static function backup($type, $name) {
+        $name = "{$type}:{$name}";
         $backupName = "{$name}:b";
         $backupTimeName = "{$backupName}:t";
         $backupTimeNameLen = strlen($backupTimeName);
@@ -260,7 +259,6 @@ JAVASCRIPT;
                 $setNameLenSql = "ALTER TABLE `{$prefix}options` MODIFY `name` varchar({$backupTimeNameLen})";
                 $db->query($setNameLenSql);
             }
-
 
             $backupRow = $widget->size($db->sql()->where('name = ?', $backupName)->where('user = 0')) > 0;
             if ($backupRow) {
@@ -302,7 +300,8 @@ JAVASCRIPT;
             ];
     }
 
-    private static function restore($name) {
+    private static function restore($type, $name) {
+        $name = "{$type}:{$name}";
         $backupName = "{$name}:b";
 
         $db = Typecho_Db::get();
@@ -331,9 +330,11 @@ JAVASCRIPT;
         }
     }
 
-    private static function delete($name) {
+    private static function delete($type, $name) {
+        $name = "{$type}:{$name}";
         $backupName = "{$name}:b";
         $backupTimeName = "{$backupName}:t";
+
         $widget = Typecho_Widget::widget('Widget_Abstract_Options');
         $widget->delete($widget->select()->where('name = ?', $backupName)->where('user = 0')->orWhere('name = ?', $backupTimeName)->where('user = 0'));
         $message = "删除成功!";
