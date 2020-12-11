@@ -41,7 +41,7 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
         if (isset($_GET['action']) && $_GET['action'] == 'backup') {
             $name = "{$_GET['type']}:{$_GET['name']}";
             $message = self::backup($name);
-            Typecho_Widget::widget('Widget_Notice')->set(_t($message), 'success');
+            Typecho_Widget::widget('Widget_Notice')->set(_t($message['msg']), $message['status']);
             Typecho_Response::getInstance()->goBack();
         }
         if (isset($_GET['action']) && $_GET['action'] == 'restore') {
@@ -291,9 +291,15 @@ JAVASCRIPT;
                 );
                 $widget->insert($backup);
             }
-            return "备份成功!";
+            return [
+                'msg' => "备份成功!",
+                'status' => 'success'
+            ];
         } else
-            return "无历史继龙, 不需要进行备份!";
+            return [
+                'msg' => "暂无数据, 不需要进行备份!",
+                'status' => 'error'
+            ];
     }
 
     private static function restore($name) {
