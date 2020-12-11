@@ -56,12 +56,6 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
             Typecho_Response::getInstance()->goBack();
         }
 
-        $form->addItem(new Title_Plugin('autoSaveTitle', null, null, _t('自动备份'), null));
-        $cycle = new Typecho_Widget_Helper_Form_Element_Text('cycle', null, '0', _t('保存周期(天)'), _t('留空或置0取消自动更新'));
-        $cycle->input->setAttribute('class', 'mini');
-        $cycle->addRule('isInteger', _t('更新周期必须是纯数字'));
-        $form->addInput($cycle);
-
         $actionUrl = Typecho_Common::url('/options-plugin.php?config=DataGuard&action=%s&type=%s&name=%s', Helper::options()->adminUrl);
 
         $backups = [
@@ -121,6 +115,12 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
                 }
             }
         }
+
+        $form->addItem(new Title_Plugin('autoSaveTitle', null, null, _t('自动备份'), null));
+        $cycle = new Typecho_Widget_Helper_Form_Element_Text('cycle', null, '0', _t('保存周期(天)'), _t('留空或置0取消自动更新'));
+        $cycle->input->setAttribute('class', 'mini');
+        $cycle->addRule('isInteger', _t('更新周期必须是纯数字'));
+        $form->addInput($cycle);
 
         echo <<<HTML
             <style>
