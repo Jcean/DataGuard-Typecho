@@ -2,7 +2,7 @@
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 /**
  * Typecho 数据卫士
- * 
+ *
  * @package DataGuard
  * @author Jesus0s
  * @version 1.0.0
@@ -12,17 +12,17 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
 {
     /**
      * 激活插件方法,如果激活失败,直接抛出异常
-     * 
+     *
      * @access public
      * @return void
      */
     public static function activate() {
         Typecho_Plugin::factory('Widget_Archive')->afterRender = array('DataGuard_Plugin', 'render');
     }
-    
+
     /**
      * 禁用插件方法,如果禁用失败,直接抛出异常
-     * 
+     *
      * @static
      * @access public
      * @return void
@@ -40,8 +40,7 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
     public static function config(Typecho_Widget_Helper_Form $form) {
         if (isset($_GET['action']) && $_GET['action'] == 'backup') {
             $name = "{$_GET['type']}:{$_GET['name']}";
-            self::backup($name);
-            $message = "备份成功!";
+            $message = self::backup($name);
             Typecho_Widget::widget('Widget_Notice')->set(_t($message), 'success');
             Typecho_Response::getInstance()->goBack();
         }
@@ -52,14 +51,20 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
             Typecho_Widget::widget('Widget_Notice')->set(_t($message), 'success');
             Typecho_Response::getInstance()->goBack();
         }
+        if (isset($_GET['action']) && $_GET['action'] == 'delete') {
+            $name = "{$_GET['type']}:{$_GET['name']}";
+            self::delete($name);
+            $message = "删除成功!";
+            Typecho_Widget::widget('Widget_Notice')->set(_t($message), 'success');
+            Typecho_Response::getInstance()->goBack();
+        }
 
-        Typecho_Widget::widget('Widget_Themes_List')->to($themes);
-        $plugins = Typecho_Plugin::export()['activated'];
 
         $actionUrl = Typecho_Common::url('/options-plugin.php?config=DataGuard&action=%s&type=%s&name=%s', Helper::options()->adminUrl);
 
         $form->addInput(new Title_Plugin('themeTitle', null, null, _t('主题备份'), null));
 
+        Typecho_Widget::widget('Widget_Themes_List')->to($themes);
         $i = 0;
         while($themes->next()) {
             if($themes->activated) {
@@ -81,10 +86,22 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
                 $restoreBtn->input->setAttribute('onclick', 'javascript:return btnClick(this)');
                 $restoreBtn->input->setAttribute('formaction', sprintf($actionUrl, 'restore', 'theme', $themes->name));
                 $form->addItem($restoreBtn);
+                $deleteBtn = new Typecho_Widget_Helper_Form_Element_Submit();
+                $deleteBtn->value(_t('删除备份'));
+                $deleteBtn->input->setAttribute('class', 'btn btn-s btn-warn btn-operate');
+                $deleteBtn->input->setAttribute('onclick', 'javascript:return btnClick(this)');
+                $deleteBtn->input->setAttribute('formaction', sprintf($actionUrl, 'delete', 'theme', $themes->name));
+                $form->addItem($deleteBtn);
             }
         }
 
-        $form->addInput(new Title_Plugin('pluginTitle', null, null, _t('插件备份'), null));
+        $pluginsTitle = new Title_Plugin('pluginTitle', null, null, _t('插件备份'), null);
+        $form->addInput($pluginsTitle);
+
+        $plugins = Typecho_Plugin::export()['activated'];
+        if(sizeof($plugins) <= 1) {
+            $pluginsTitle->description(_t("暂无需备份插件"));
+        }
 
         $i = 0;
         foreach ($plugins as $plugin =>  $v) {
@@ -107,6 +124,12 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
                 $restoreBtn->input->setAttribute('onclick','javascript:return btnClick(this)');
                 $restoreBtn->input->setAttribute('formaction', sprintf($actionUrl, 'restore', 'plugin', $plugin));
                 $form->addItem($restoreBtn);
+                $deleteBtn = new Typecho_Widget_Helper_Form_Element_Submit();
+                $deleteBtn->value(_t('删除备份'));
+                $deleteBtn->input->setAttribute('class','btn btn-s btn-warn btn-operate');
+                $deleteBtn->input->setAttribute('onclick','javascript:return btnClick(this)');
+                $deleteBtn->input->setAttribute('formaction', sprintf($actionUrl, 'delete', 'plugin', $plugin));
+                $form->addItem($deleteBtn);
             }
         }
 
@@ -127,7 +150,7 @@ JAVASCRIPT;
 
     /**
      * 个人用户的配置面板
-     * 
+     *
      * @access public
      * @param Typecho_Widget_Helper_Form $form
      * @return void
@@ -162,12 +185,12 @@ JAVASCRIPT;
                 }
             }
             Typecho_Widget::widget('Widget_Themes_List')->to($themes);
-            $plugins = Typecho_Plugin::export()['activated'];
             while($themes->next()) {
                 if($themes->activated) {
                     self::backup("theme:{$themes->name}");
                 }
             }
+            $plugins = Typecho_Plugin::export()['activated'];
             foreach ($plugins as $plugin =>  $v) {
                 if ($plugin != 'DataGuard') {
                     self::backup("plugin:{$plugin}");
@@ -219,11 +242,26 @@ JAVASCRIPT;
     private static function backup($name) {
         $backupName = "{$name}:b";
         $backupTimeName = "{$backupName}:t";
+        $backupTimeNameLen = strlen($backupTimeName);
 
         $db = Typecho_Db::get();
         $widget = Typecho_Widget::widget('Widget_Abstract_Options');
+
         $currentRow = $db->fetchRow($widget->select()->where('name = ?', $name)->where('user = 0'));
         if (!empty($currentRow)) {
+            $dbName = $db->getConfig()[0]->database;
+            $prefix = $db->getPrefix();
+            $getNameLenSql = "SELECT `CHARACTER_MAXIMUM_LENGTH` FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `table_name` = '{$prefix}options' AND table_schema = '{$dbName}' AND `column_name` = 'name';";
+            $getNameLenSql = $db->query($getNameLenSql);
+            $optionNameLenRow = $db->fetchRow($getNameLenSql);
+            $optionNameLen = $optionNameLenRow['CHARACTER_MAXIMUM_LENGTH'];
+
+            if($optionNameLen < $backupTimeNameLen) {
+                $setNameLenSql = "ALTER TABLE `{$prefix}options` MODIFY `name` varchar({$backupTimeNameLen})";
+                $db->query($setNameLenSql);
+            }
+
+
             $backupRow = $widget->size($db->sql()->where('name = ?', $backupName)->where('user = 0')) > 0;
             if ($backupRow) {
                 $backup = [
@@ -238,23 +276,24 @@ JAVASCRIPT;
                 ];
                 $widget->insert($backup);
             }
-        }
-
-        $backupTime = $widget->size($db->sql()->where('name = ?', $backupTimeName)->where('user = 0')) > 0;
-        $currentTime = time();
-        if ($backupTime) {
-            $backup = [
-                'value' => $currentTime
-            ];
-            $widget->update($backup, $db->sql()->where('name = ?', $backupTimeName)->where('user = 0'));
-        } else {
-            $backup = array(
-                'name' => $backupTimeName,
-                'user' => 0,
-                'value' => $currentTime
-            );
-            $widget->insert($backup);
-        }
+            $backupTime = $widget->size($db->sql()->where('name = ?', $backupTimeName)->where('user = 0')) > 0;
+            $currentTime = time();
+            if ($backupTime) {
+                $backup = [
+                    'value' => $currentTime
+                ];
+                $widget->update($backup, $db->sql()->where('name = ?', $backupTimeName)->where('user = 0'));
+            } else {
+                $backup = array(
+                    'name' => $backupTimeName,
+                    'user' => 0,
+                    'value' => $currentTime
+                );
+                $widget->insert($backup);
+            }
+            return "备份成功!";
+        } else
+            return "无历史继龙, 不需要进行备份!";
     }
 
     private static function restore($name) {
@@ -284,6 +323,16 @@ JAVASCRIPT;
             ];
             $widget->insert($backup);
         }
+    }
+
+    private static function delete($name) {
+        $backupName = "{$name}:b";
+        $backupTimeName = "{$backupName}:t";
+        $widget = Typecho_Widget::widget('Widget_Abstract_Options');
+        $widget->delete($widget->select()->where('name = ?', $backupName)->where('user = 0')->orWhere('name = ?', $backupTimeName)->where('user = 0'));
+        $message = "删除成功!";
+        Typecho_Widget::widget('Widget_Notice')->set(_t($message), 'success');
+        Typecho_Response::getInstance()->goBack();
     }
 }
 
