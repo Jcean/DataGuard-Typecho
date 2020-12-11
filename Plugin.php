@@ -297,7 +297,7 @@ JAVASCRIPT;
             ];
         } else
             return [
-                'msg' => "未找到 {$$name} 配置数据!",
+                'msg' => "未找到 {$name} 配置数据!",
                 'status' => 'error'
             ];
     }
