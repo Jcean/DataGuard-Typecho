@@ -73,7 +73,7 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
                 array_push($backups['plugin'], $plugin);
 
         foreach ($backups as $type => $v) {
-            $backupTitle[$type] = new Title_Plugin('backupTitle', null, null, _t($type)._t("备份"), null);
+            $backupTitle[$type] = new Title_Plugin('backupTitle', null, null, self::getText($type)._t("备份"), null);
             $form->addItem($backupTitle[$type]);
             if(sizeof($v) <= 0) {
                 $backupTitle[$type]->message(_t("暂无需备份") . _t($type));
@@ -344,6 +344,10 @@ JAVASCRIPT;
         $message = "删除成功!";
         Typecho_Widget::widget('Widget_Notice')->set(_t($message), 'success');
         Typecho_Response::getInstance()->goBack();
+    }
+
+    private static function getText($type) {
+        return $type==='theme'?'主题':'插件';
     }
 }
 
