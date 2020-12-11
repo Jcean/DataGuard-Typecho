@@ -357,7 +357,7 @@ class Title_Plugin extends Typecho_Widget_Helper_Form_Element
     public function label($value) {
         /** 创建标题元素 */
         if (empty($this->label)) {
-            $this->label = new Typecho_Widget_Helper_Layout('label', array('class' => 'typecho-label', 'style'=>'font-size: 2em;border-bottom: 1px #ddd solid;padding-top:2em;'));
+            $this->label = new Typecho_Widget_Helper_Layout('label', array('class' => 'typecho-label', 'style'=>'font-size: 2em;border-bottom: 1px #ddd solid;'));
             $this->container($this->label);
         }
 
