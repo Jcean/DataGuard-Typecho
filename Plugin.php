@@ -74,9 +74,9 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
 
         foreach ($backups as $type => $v) {
             $backupTitle[$type] = new Title_Plugin('backupTitle', null, null, _t($type)._t("备份"), null);
-            $form->addInput($backupTitle[$type]);
+            $form->addItem($backupTitle[$type]);
             if(sizeof($v) <= 0) {
-                $backupTitle[$type]->description(_t("暂无需备份") . _t($type));
+                $backupTitle[$type]->message(_t("暂无需备份") . _t($type));
             }
 
             for ($i = 0; $i < sizeof($v); $i++) {
@@ -85,7 +85,7 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
                 $backupTime = self::loadBackupTime($type, $name);
                 $themeTitle = new SubTitle_Plugin('SubTitle', null, null, _t(($i+1) . ". {$name}"), _t('上次备份时间'));
                 $themeTitle->description(_t($backupTime));
-                $form->addInput($themeTitle);
+                $form->addItem($themeTitle);
                 $btnArr = [
                     'backup' => [
                         'color' => '#5cb85c',
@@ -100,6 +100,10 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
                         'text' => '删除备份'
                     ]
                 ];
+                $btnBox = new Typecho_Widget_Helper_Layout('div', [
+                    'style' => 'height: 3em;margin-bottom: 3em;'
+                ]);
+                $form->addItem($btnBox);
                 foreach ($btnArr as $operateType => $attr) {
                     $operateBtn = new Typecho_Widget_Helper_Form_Element_Submit();
                     $operateBtn->value(_t($attr['text']));
@@ -107,12 +111,12 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
                     $operateBtn->input->setAttribute('class', 'btn btn-s btn-operate');
                     $operateBtn->input->setAttribute('onclick', 'javascript:return btnClick(this)');
                     $operateBtn->input->setAttribute('formaction', sprintf($actionUrl, $operateType, $type, $name));
-                    $form->addItem($operateBtn);
+                    $btnBox->addItem($operateBtn);
                 }
             }
         }
 
-        $form->addInput(new Title_Plugin('autoSaveTitle', null, null, _t('自动备份'), null));
+        $form->addItem(new Title_Plugin('autoSaveTitle', null, null, _t('自动备份'), null));
         $cycle = new Typecho_Widget_Helper_Form_Element_Text('cycle', null, '0', _t('保存周期(天)'), _t('留空或置0取消自动更新'));
         $cycle->input->setAttribute('class', 'mini');
         $cycle->addRule('isInteger', _t('更新周期必须是纯数字'));
@@ -122,14 +126,14 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
             <style>
             .btn-s {
             float: left;
-                width: 170px;
-                height: 40px;
-                line-height: 40px;
-                margin: 0 1em 0 0 !important;
+                width: 10em;
+                height: 3em;
+                line-height: 3em;
+                margin: 0 1em 1em 0 !important;
                 border: none;
                 color: #fff;
-                font-size: 14px;
-                border-radius: 20px;
+                font-size: 1em;
+                border-radius: 2em;
                 transition: all 0.35s;
             }
             </style>
@@ -346,8 +350,11 @@ JAVASCRIPT;
 
 class Title_Plugin extends Typecho_Widget_Helper_Form_Element
 {
-    public function label($value)
-    {
+    public function value($value) {
+        return parent::value($value);
+    }
+
+    public function label($value) {
         /** 创建标题元素 */
         if (empty($this->label)) {
             $this->label = new Typecho_Widget_Helper_Layout('label', array('class' => 'typecho-label', 'style'=>'font-size: 2em;border-bottom: 1px #ddd solid;padding-top:2em;'));
@@ -358,36 +365,36 @@ class Title_Plugin extends Typecho_Widget_Helper_Form_Element
         return $this;
     }
 
-    public function input($name = NULL, array $options = NULL)
-    {
+    public function input($name = NULL, array $options = NULL) {
         $input = new Typecho_Widget_Helper_Layout('p', array());
         $this->container($input);
         $this->inputs[] = $input;
         return $input;
     }
+
+    public function message($message) {
+        if (empty($this->message)) {
+            $this->message =  new Typecho_Widget_Helper_Layout('p', array('class' => 'message notice'));
+            $this->container($this->message);
+        }
+
+        $this->message->html($message);
+        return $this;
+    }
+
     protected function _value($value) {}
 }
 
-class SubTitle_Plugin extends Typecho_Widget_Helper_Form_Element
+class SubTitle_Plugin extends Title_Plugin
 {
-    public function label($value)
-    {
-        /** 创建副标题元素 */
+    public function label($value) {
+        /** 创建标题元素 */
         if (empty($this->label)) {
-            $this->label = new Typecho_Widget_Helper_Layout('label', array('class' => 'typecho-label', 'style'=>'font-size: 1.5em;padding-top:2em;'));
+            $this->label = new Typecho_Widget_Helper_Layout('label', array('class' => 'typecho-label', 'style'=>'font-size: 1.5em;'));
             $this->container($this->label);
         }
 
         $this->label->html($value);
         return $this;
     }
-
-    public function input($name = NULL, array $options = NULL)
-    {
-        $input = new Typecho_Widget_Helper_Layout('p', array());
-        $this->container($input);
-        $this->inputs[] = $input;
-        return $input;
-    }
-    protected function _value($value) {}
 }
