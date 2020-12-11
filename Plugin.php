@@ -17,7 +17,7 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
      * @return void
      */
     public static function activate() {
-        Typecho_Plugin::factory('Widget_Archive')->afterRender = array('DataGuard_Plugin', 'render');
+        Typecho_Plugin::factory('Widget_Archive')->afterRender = ['DataGuard_Plugin', 'render'];
     }
 
     /**
@@ -286,11 +286,11 @@ JAVASCRIPT;
                 ];
                 $widget->update($backup, $db->sql()->where('name = ?', $backupTimeName)->where('user = 0'));
             } else {
-                $backup = array(
+                $backup = [
                     'name' => $backupTimeName,
                     'user' => 0,
                     'value' => $currentTime
-                );
+                ];
                 $widget->insert($backup);
             }
             return [
@@ -361,7 +361,7 @@ class Title_Plugin extends Typecho_Widget_Helper_Form_Element
     public function label($value) {
         /** 创建标题元素 */
         if (empty($this->label)) {
-            $this->label = new Typecho_Widget_Helper_Layout('label', array('class' => 'typecho-label', 'style'=>'font-size: 2em;border-bottom: 1px #ddd solid;'));
+            $this->label = new Typecho_Widget_Helper_Layout('label', ['class' => 'typecho-label', 'style'=>'font-size: 2em;border-bottom: 1px #ddd solid;']);
             $this->container($this->label);
         }
 
@@ -378,7 +378,7 @@ class Title_Plugin extends Typecho_Widget_Helper_Form_Element
 
     public function message($message) {
         if (empty($this->message)) {
-            $this->message =  new Typecho_Widget_Helper_Layout('p', array('class' => 'message notice'));
+            $this->message =  new Typecho_Widget_Helper_Layout('p', ['class' => 'message notice']);
             $this->container($this->message);
         }
 
@@ -394,7 +394,7 @@ class SubTitle_Plugin extends Title_Plugin
     public function label($value) {
         /** 创建标题元素 */
         if (empty($this->label)) {
-            $this->label = new Typecho_Widget_Helper_Layout('label', array('class' => 'typecho-label', 'style'=>'font-size: 1.5em;'));
+            $this->label = new Typecho_Widget_Helper_Layout('label', ['class' => 'typecho-label', 'style'=>'font-size: 1.5em;']);
             $this->container($this->label);
         }
 
