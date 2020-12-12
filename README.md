@@ -28,4 +28,6 @@
 ## LICENSE
 DataGuard-Typecho is under the MIT license.
 
+[Gitee项目地址](https://gitee.com/Jesus0s/DataGuard-Typecho)
+
 [GitHub项目地址](https://github.com/Jesus0s/DataGuard-Typecho)
