@@ -2,7 +2,10 @@
 数据卫士 DataGuard For Typecho
 
 ## 界面
-![DataGuard](https://cdn.jsdelivr.net/gh/Jesus0s/BlogStatic@latest/usr/uploads/2020/12/1401237728.png)
+[photo]
+![DataGuard][1]
+[/photo]
+[1]: https://cdn.jsdelivr.net/gh/Jesus0s/BlogStatic@latest/usr/uploads/2020/12/1401237728.png
 
 ## 介绍
   1. 用于Typecho主题、插件的数据备份
