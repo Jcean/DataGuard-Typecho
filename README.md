@@ -1,5 +1,8 @@
 # DataGuard-Typecho
-数据卫士 DataGuard For Typecho v1.0.1
+数据卫士 DataGuard For Typecho
+
+## 界面
+![DataGuard](https://cdn.jsdelivr.net/gh/Jesus0s/BlogStatic@latest/usr/uploads/2020/12/1401237728.png)
 
 ## 介绍
   1. 用于Typecho主题、插件的数据备份
@@ -20,7 +23,9 @@
 设置自动备份周期（天），留空或置0关闭自动备份
 
 ## FAQ
-更多问题可以通过 issue 页面提交，或者通过 Telegram、邮件向我反馈
+更多问题可以通过 issue 页面提交，或者通过 留言、邮件向我反馈
 
 ## LICENSE
 DataGuard-Typecho is under the MIT license.
+
+[hide][GitHub项目地址](https://github.com/Jesus0s/DataGuard-Typecho)[/hide]
