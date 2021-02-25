@@ -4,9 +4,9 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * Typecho 数据卫士
  *
  * @package DataGuard
- * @author Jesus0s
- * @version 1.0.1
- * @link https://www.jesus0s.com
+ * @author Jcean
+ * @version 1.0.2
+ * @link https://www.jcean.com
  */
 class DataGuard_Plugin implements Typecho_Plugin_Interface
 {

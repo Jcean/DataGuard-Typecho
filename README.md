@@ -2,7 +2,7 @@
 数据卫士 DataGuard For Typecho
 
 ## 界面
-![DataGuard](https://cdn.jsdelivr.net/gh/Jesus0s/BlogStatic@latest/usr/uploads/2020/12/1401237728.png)
+![DataGuard](https://cdn.jsdelivr.net/gh/Jcean/BlogStatic@latest/usr/uploads/2020/12/1401237728.png)
 
 ## 介绍
   1. 用于Typecho主题、插件的数据备份
@@ -28,6 +28,6 @@
 ## LICENSE
 DataGuard-Typecho is under the MIT license.
 
-[Gitee项目地址](https://gitee.com/Jesus0s/DataGuard-Typecho)
+[Gitee项目地址](https://gitee.com/Jcean/DataGuard-Typecho)
 
-[GitHub项目地址](https://github.com/Jesus0s/DataGuard-Typecho)
+[GitHub项目地址](https://github.com/Jcean/DataGuard-Typecho)
