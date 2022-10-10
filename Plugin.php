@@ -1,11 +1,15 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
+
+use Typecho\Widget\Helper\Form\Element;
+use Typecho\Widget\Helper\Layout;
+
 /**
  * Typecho 数据卫士
  *
  * @package DataGuard
  * @author Jcean
- * @version 1.0.2
+ * @version 1.0.3
  * @link https://www.jcean.com
  */
 class DataGuard_Plugin implements Typecho_Plugin_Interface
@@ -354,11 +358,11 @@ JAVASCRIPT;
 
 class Title_Plugin extends Typecho_Widget_Helper_Form_Element
 {
-    public function value($value) {
+    public function value($value): Element {
         return parent::value($value);
     }
 
-    public function label($value) {
+    public function label(string $value): Element {
         /** 创建标题元素 */
         if (empty($this->label)) {
             $this->label = new Typecho_Widget_Helper_Layout('label', ['class' => 'typecho-label', 'style'=>'font-size: 2em;border-bottom: 1px #ddd solid;']);
@@ -369,14 +373,14 @@ class Title_Plugin extends Typecho_Widget_Helper_Form_Element
         return $this;
     }
 
-    public function input($name = NULL, array $options = NULL) {
+    public function input(?string $name = NULL, ?array $options = NULL): ?Layout {
         $input = new Typecho_Widget_Helper_Layout('p', array());
         $this->container($input);
         $this->inputs[] = $input;
         return $input;
     }
 
-    public function message($message) {
+    public function message(string $message): Element {
         if (empty($this->message)) {
             $this->message =  new Typecho_Widget_Helper_Layout('p', ['class' => 'message notice']);
             $this->container($this->message);
@@ -387,11 +391,13 @@ class Title_Plugin extends Typecho_Widget_Helper_Form_Element
     }
 
     protected function _value($value) {}
+    
+    protected function inputValue($value) {}
 }
 
 class SubTitle_Plugin extends Title_Plugin
 {
-    public function label($value) {
+    public function label(string $value): Element {
         /** 创建标题元素 */
         if (empty($this->label)) {
             $this->label = new Typecho_Widget_Helper_Layout('label', ['class' => 'typecho-label', 'style'=>'font-size: 1.5em;']);
