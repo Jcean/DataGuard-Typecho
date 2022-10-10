@@ -45,19 +45,19 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
         if (isset($_GET['action']) && $_GET['action'] == 'backup') {
             $message = self::backup($_GET['type'], $_GET['name']);
             Typecho_Widget::widget('Widget_Notice')->set(_t($message['msg']), $message['status']);
-            Typecho_Response::getInstance()->goBack();
+            Utils::getResponseInstance->goBack();
         }
         if (isset($_GET['action']) && $_GET['action'] == 'restore') {
             self::restore($_GET['type'], $_GET['name']);
             $message = "恢复成功!";
             Typecho_Widget::widget('Widget_Notice')->set(_t($message), 'success');
-            Typecho_Response::getInstance()->goBack();
+            Utils::getResponseInstance->goBack();
         }
         if (isset($_GET['action']) && $_GET['action'] == 'delete') {
             self::delete($_GET['type'], $_GET['name']);
             $message = "删除成功!";
             Typecho_Widget::widget('Widget_Notice')->set(_t($message), 'success');
-            Typecho_Response::getInstance()->goBack();
+            Utils::getResponseInstance->goBack();
         }
 
         $actionUrl = Typecho_Common::url('/options-plugin.php?config=DataGuard&action=%s&type=%s&name=%s', Helper::options()->adminUrl);
@@ -77,7 +77,7 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
                 array_push($backups['plugin'], $plugin);
 
         foreach ($backups as $type => $v) {
-            $backupTitle[$type] = new Title_Plugin('backupTitle', null, null, self::getText($type)._t("备份"), null);
+            $backupTitle[$type] = new DataGuard_Title_Plugin('backupTitle', null, null, self::getText($type)._t("备份"), null);
             $form->addItem($backupTitle[$type]);
             if(sizeof($v) <= 0) {
                 $backupTitle[$type]->message(_t("暂无需备份") . _t($type));
@@ -87,7 +87,7 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
                 $name = $v[$i];
                 if($name === 'DataGuard') continue;
                 $backupTime = self::loadBackupTime($type, $name);
-                $themeTitle = new SubTitle_Plugin('SubTitle', null, null, _t(($i+1) . ". {$name}"), _t('上次备份时间'));
+                $themeTitle = new DataGuard_SubTitle_Plugin('SubTitle', null, null, _t(($i+1) . ". {$name}"), _t('上次备份时间'));
                 $themeTitle->description(_t($backupTime));
                 $form->addItem($themeTitle);
                 $btnArr = [
@@ -120,7 +120,7 @@ class DataGuard_Plugin implements Typecho_Plugin_Interface
             }
         }
 
-        $form->addItem(new Title_Plugin('autoSaveTitle', null, null, _t('自动备份'), null));
+        $form->addItem(new DataGuard_Title_Plugin('autoSaveTitle', null, null, _t('自动备份'), null));
         $cycle = new Typecho_Widget_Helper_Form_Element_Text('cycle', null, '0', _t('保存周期(天)'), _t('留空或置0取消自动更新'));
         $cycle->input->setAttribute('class', 'mini');
         $cycle->addRule('isInteger', _t('更新周期必须是纯数字'));
@@ -256,7 +256,7 @@ JAVASCRIPT;
 
         $currentRow = $db->fetchRow($widget->select()->where('name = ?', $name)->where('user = 0'));
         if (!empty($currentRow)) {
-            $dbName = $db->getConfig()[0]->database;
+            $dbName = $db->getConfig(Typecho_Db::READ)->database;
             $prefix = $db->getPrefix();
             $getNameLenSql = "SELECT `CHARACTER_MAXIMUM_LENGTH` FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `table_name` = '{$prefix}options' AND table_schema = '{$dbName}' AND `column_name` = 'name';";
             $getNameLenSql = $db->query($getNameLenSql);
@@ -318,7 +318,7 @@ JAVASCRIPT;
         if (empty($backupRow) || empty($backupRow['value'])) {
             $message = "备份恢复终止: 未找到 {$name} 配置备份数据!";
             Typecho_Widget::widget('Widget_Notice')->set(_t($message), 'error');
-            Typecho_Response::getInstance()->goBack();
+            Utils::getResponseInstance->goBack();
             return;
         }
 
@@ -347,7 +347,7 @@ JAVASCRIPT;
         $widget->delete($widget->select()->where('name = ?', $backupName)->where('user = 0')->orWhere('name = ?', $backupTimeName)->where('user = 0'));
         $message = "删除成功!";
         Typecho_Widget::widget('Widget_Notice')->set(_t($message), 'success');
-        Typecho_Response::getInstance()->goBack();
+        $responseObject->goBack();
     }
 
     private static function getText($type) {
@@ -356,7 +356,7 @@ JAVASCRIPT;
 }
 
 
-class Title_Plugin extends Typecho_Widget_Helper_Form_Element
+class DataGuard_Title_Plugin extends Typecho_Widget_Helper_Form_Element
 {
     public function value($value): Element {
         return parent::value($value);
@@ -395,7 +395,7 @@ class Title_Plugin extends Typecho_Widget_Helper_Form_Element
     protected function inputValue($value) {}
 }
 
-class SubTitle_Plugin extends Title_Plugin
+class DataGuard_SubTitle_Plugin extends DataGuard_Title_Plugin
 {
     public function label(string $value): Element {
         /** 创建标题元素 */
@@ -406,5 +406,14 @@ class SubTitle_Plugin extends Title_Plugin
 
         $this->label->html($value);
         return $this;
+    }
+}
+
+class Utils {
+    public static function getResponseInstance() {
+        if (class_exists('\Typecho\Widget\Response') && class_exists('\Typecho\Request') && class_exists('\Typecho\Response')) {
+            return new Typecho_Widget_Response(Typecho_Request::getInstance(), Typecho_Response::getInstance());
+        }
+        return Typecho_Response::getInstance();
     }
 }
